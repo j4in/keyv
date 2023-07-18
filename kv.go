@@ -45,24 +45,10 @@ type KVEntry struct {
 func (kv KVEntry) encode(buf *bytes.Buffer) int {
 	h := make([]byte, MaxHeaderSize)
 	hlen := kv.header.encode(h)
-
 	len := Check2(buf.Write(h[:hlen]))
-
 	len += Check2(buf.Write(kv.key))
 	len += Check2(buf.Write(kv.value))
-
 	return len
-}
-
-func Check2[T any](v T, err error) T {
-	Check(err)
-	return v
-}
-
-func Check(err error) {
-	if err != nil {
-		panic(err)
-	}
 }
 
 func (kv *KVEntry) decode(data []byte) int {
