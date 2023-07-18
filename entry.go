@@ -15,6 +15,10 @@ const (
 	MaxHeaderSize = 11
 )
 
+// encode serializes the data in to bytes. It uses the following layout
+// +------------------------------------------
+// | version | key_length | value_length
+// +-----------------------------------------
 func (h header) encode(out []byte) int {
 	out[0] = h.version
 	length := 1
@@ -54,6 +58,10 @@ func NewKVEntry(key, value []byte) KVEntry {
 	}
 }
 
+// encode serializes the data in to bytes. It uses the following layout
+// +------------------------------------------
+// | header | key | value
+// +-----------------------------------------
 func (kv KVEntry) encode(buf *bytes.Buffer) int {
 	h := make([]byte, MaxHeaderSize)
 	hlen := kv.header.encode(h)
@@ -73,6 +81,10 @@ func (kv *KVEntry) decode(data []byte) int {
 
 type KVEntries []KVEntry
 
+// encode serializes the data in to bytes. It uses the following layout
+// +------------------------------------------
+// | size | KVEntry [size | KVEntry ...]
+// +-----------------------------------------
 func (e KVEntries) encode(buf *bytes.Buffer) int {
 	len := 0
 	ibuf := new(bytes.Buffer)
