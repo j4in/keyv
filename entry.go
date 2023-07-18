@@ -42,6 +42,18 @@ type KVEntry struct {
 	value  []byte
 }
 
+func NewKVEntry(key, value []byte) KVEntry {
+	return KVEntry{
+		header: header{
+			version: byte(1),
+			klen:    uint32(len(key)),
+			vlen:    uint32(len(value)),
+		},
+		key:   key,
+		value: value,
+	}
+}
+
 func (kv KVEntry) encode(buf *bytes.Buffer) int {
 	h := make([]byte, MaxHeaderSize)
 	hlen := kv.header.encode(h)
@@ -57,4 +69,50 @@ func (kv *KVEntry) decode(data []byte) int {
 	kv.key = data[hlen:index]
 	kv.value = data[index : index+int(kv.header.vlen)]
 	return hlen + int(kv.header.klen) + int(kv.header.vlen)
+}
+
+type KVEntries []KVEntry
+
+func (e KVEntries) encode(buf *bytes.Buffer) int {
+	len := 0
+	ibuf := new(bytes.Buffer)
+	for _, b := range e {
+		ilen := b.encode(ibuf)
+		lb := make([]byte, 10)
+		el := binary.PutUvarint(lb, uint64(ilen))
+		len += Check2(buf.Write(lb[:el]))
+		len += Check2(buf.Write(ibuf.Bytes()))
+		ibuf.Reset()
+	}
+	return len
+}
+
+func (e *KVEntries) decode(data []byte) int {
+	index := 0
+	for {
+		elen, ilen := binary.Uvarint(data[index:])
+		index += ilen
+		en := KVEntry{}
+
+		en.decode(data[index : index+int(elen)])
+		index += int(elen)
+
+		*e = append(*e, en)
+		if index >= len(data) {
+			break
+		}
+
+	}
+
+	return index
+}
+
+func (a KVEntries) Less(i, j int) bool {
+	return bytes.Compare(a[i].key, a[j].key) != -1
+}
+func (a KVEntries) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+func (a KVEntries) Len() int {
+	return len(a)
 }

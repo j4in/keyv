@@ -62,3 +62,38 @@ func TestKVEntry(t *testing.T) {
 func sb(s string) []byte {
 	return []byte(s)
 }
+
+func TestKVEntries(t *testing.T) {
+	e := KVEntries{NewKVEntry(sb("one"), sb("one")), NewKVEntry(sb("two"), sb("two"))}
+	lb := new(bytes.Buffer)
+	e.encode(lb)
+
+	oe := new(KVEntries)
+
+	oe.decode(lb.Bytes())
+	if !reflect.DeepEqual(&e, oe) {
+		t.Error("Expected proper deser")
+	}
+}
+
+func BenchmarkKVEntries_encode(b *testing.B) {
+	lb := new(bytes.Buffer)
+	e := KVEntries{NewKVEntry(sb("one"), sb("one")), NewKVEntry(sb("two"), sb("two"))}
+
+	for i := 0; i < b.N; i++ {
+		lb.Reset()
+		e.encode(lb)
+	}
+}
+
+func BenchmarkKVEntries_decode(b *testing.B) {
+	lb := new(bytes.Buffer)
+	e := KVEntries{NewKVEntry(sb("one"), sb("one")), NewKVEntry(sb("two"), sb("two"))}
+	e.encode(lb)
+	for i := 0; i < b.N; i++ {
+
+		oe := KVEntries{}
+
+		oe.decode(lb.Bytes())
+	}
+}
